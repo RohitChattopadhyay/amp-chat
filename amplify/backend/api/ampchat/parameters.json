@@ -1,0 +1,11 @@
+{
+    "AppSyncApiName": "ampchat",
+    "DynamoDBBillingMode": "PAY_PER_REQUEST",
+    "DynamoDBEnableServerSideEncryption": false,
+    "AuthCognitoUserPoolId": {
+        "Fn::GetAtt": [
+            "authampchat75271bab",
+            "Outputs.UserPoolId"
+        ]
+    }
+}

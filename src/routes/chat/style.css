@@ -1,0 +1,6 @@
+dialog{
+    box-shadow: 0 0 15px lightgray;
+    display: block !important;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+  }

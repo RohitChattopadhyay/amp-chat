@@ -1,0 +1,20 @@
+{
+    "dev": {
+        "awscloudformation": {
+            "AuthRoleName": "amplify-ampchat-dev-235405-authRole",
+            "UnauthRoleArn": "arn:aws:iam::501090252695:role/amplify-ampchat-dev-235405-unauthRole",
+            "AuthRoleArn": "arn:aws:iam::501090252695:role/amplify-ampchat-dev-235405-authRole",
+            "Region": "us-east-1",
+            "DeploymentBucketName": "amplify-ampchat-dev-235405-deployment",
+            "UnauthRoleName": "amplify-ampchat-dev-235405-unauthRole",
+            "StackName": "amplify-ampchat-dev-235405",
+            "StackId": "arn:aws:cloudformation:us-east-1:501090252695:stack/amplify-ampchat-dev-235405/c7796c70-194a-11eb-82ca-0aac80a39b9b",
+            "AmplifyAppId": "d2w6h0ued2hkuj"
+        },
+        "categories": {
+            "auth": {
+                "ampchat75271bab": {}
+            }
+        }
+    }
+}
