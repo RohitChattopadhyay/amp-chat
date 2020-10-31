@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "build": "preact build",
+    "build": "preact build --no-prerender --no-inline-css",
     "serve": "sirv build --port 8080 --cors --single",
     "dev": "preact watch",
     "start": "npm run dev",
@@ -28,6 +28,8 @@
     "sirv-cli": "1.0.3"
   },
   "dependencies": {
+    "@aws-amplify/ui-react": "^0.2.25",
+    "aws-amplify": "^3.3.5",
     "preact": "^10.3.2",
     "preact-render-to-string": "^5.1.4",
     "preact-router": "^3.2.1",
