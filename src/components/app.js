@@ -1,5 +1,5 @@
 import { h } from 'preact';
-import { Router } from 'preact-router';
+import { Router, route } from 'preact-router';
 
 import { API, graphqlOperation, Auth } from 'aws-amplify'
 import { useState, useEffect } from 'preact/hooks';
@@ -13,17 +13,59 @@ import signout_img from "../assets/signout.png"
 
 import './style.css'
 
+const createConvo = /* GraphQL */`mutation CreateConvo($id: ID!, $members: [String!]) {
+	createConvo(input: {id: $id, members: $members}) {
+		id
+	}
+}
+`
+
+const sub_onCreateRoom = /* GraphQL */`subscription OnCreateRoom($username: ID!) {
+	onCreateConvoLink(convoLinkUserId: $username) {
+	  user {
+		conversations {
+		  items {
+			conversation {
+			  id
+			}
+		  }
+		}
+	  }
+	}
+  }
+`
+
+const createConvoLink = /* GraphQL */`mutation CreateConvoLink($user: ID!, $room: ID!) {
+	createConvoLink(input: {convoLinkConversationId: $room, convoLinkUserId: $user}) {
+	  id
+	}
+  }  
+`
+
 const CreateUser = /* GraphQL */ `mutation CreateUser($username: String!, $id: ID!) {
 	createUser(input: {username: $username, id: $id}) {
 	  username
 	  conversations {
 		items {
 		  conversation {
-			name
 			id
 		  }
 		}
 	  }
+	}
+  }
+`
+
+const UpdateRoom = /* GraphQL */`mutation UpdateRoom($id: ID!, $members: [String!]) {
+	addUser(input: {id: $id, members: $members}) {
+		id
+	}
+}
+`
+
+const GetRoom = /* GraphQL */`query GetRoom($id: ID!){
+	getConvo(id: $id) {
+	  members
 	}
   }
 `
@@ -33,7 +75,6 @@ const GetUser = /* GraphQL */`query GetUser($id: ID!) {
 	  conversations {
 		items {
 		  conversation {
-			name
 			id
 		  }
 		}
@@ -43,10 +84,12 @@ const GetUser = /* GraphQL */`query GetUser($id: ID!) {
 `
 
 const App = () => {
-	const [search, setSearchTerm] = useState("")
 	const [showLoading, setShowLoading] = useState(true)
 	const [online_users, setOnlineUsers] = useState([])
 	const [username, setUserName] = useState(null)
+
+	const [search, setSearchTerm] = useState("")
+	const [roomId, setRoomId] = useState("")
 
 	useEffect(() => {
 		const onBoarding = async () => {
@@ -61,9 +104,16 @@ const App = () => {
 			if (username !== '') {
 				checkIfUserExists(username)
 			}
+
+			return API.graphql(
+				graphqlOperation(sub_onCreateRoom, { username })
+			).subscribe({
+				next: (eventData) => setOnlineUsers(eventData.value.data.onCreateConvoLink.user.conversations.items)
+			});
 		}
-		onBoarding()
-	},[]);
+		const subscription = onBoarding()
+		return () => subscription.unsubscribe()
+	}, []);
 
 	const checkIfUserExists = async (id) => {
 		try {
@@ -74,6 +124,7 @@ const App = () => {
 			} else {
 				console.log('me:', getUser)
 				setOnlineUsers(getUser.conversations.items)
+				console.log(getUser.conversations.items)
 				setShowLoading(false)
 			}
 		} catch (err) {
@@ -84,7 +135,7 @@ const App = () => {
 	const signOut = async () => {
 		try {
 			await Auth.signOut();
-			window.location = "/"
+			window.location.href = "/"
 		} catch (error) {
 			console.log('error signing out: ', error);
 		}
@@ -92,7 +143,6 @@ const App = () => {
 
 	const createUser = async (username) => {
 		try {
-			console.log(username)
 			const createdData = await API.graphql({
 				query: graphqlOperation(CreateUser).query,
 				variables: {
@@ -113,29 +163,112 @@ const App = () => {
 		</div>
 	</div>
 
-	const AuthorizedScreens = () => <div id="app">
+	const createRoom = async (room, users = []) => {
+		try {
+			const members = [...new Set([username, ...users])].sort()
+			if (members.length < 2)
+				return
+			const convo = { id: room, members }
+			await API.graphql(graphqlOperation(createConvo, convo))
+			members.map(async member => {
+				let relation = { user: member.trim(), room }
+				await API.graphql(graphqlOperation(createConvoLink, relation))
+			})
+		} catch (err) {
+			console.log('error creating conversation...', err)
+		}
+	}
+
+	const joinRoom = async () => {
+		const room = roomId.trim()
+		if (room.length < 4)
+			return
+		const room_info = await API.graphql(graphqlOperation(GetRoom, { id: room }))
+		const { getConvo } = room_info.data
+		if (!getConvo || !getConvo.members) {
+			//create group
+			let users = window.prompt("Room doesnot exist, Enter usernames of group members to create one");
+			if (users == null || users == "") {
+				setRoomId("")
+			}
+			else {
+				await createRoom(room, users.split(","))
+				route('/chat/' + room)
+			}
+		}
+		else {
+			if (getConvo.members.indexOf(username) == -1) {
+				// Group exists, adding user to room
+				const members = getConvo.members || []
+				members.push(username)
+				members.sort()
+				await API.graphql(graphqlOperation(UpdateRoom, { id: room, members: members }))
+			}
+			route('/chat/' + room)
+			setRoomId("")
+		}
+	}
+
+	const ChatPreviewGen = () => {
+
+		if (online_users && online_users.length > 0) {
+			const unq_set = new Set()
+			const unq_arr = []
+			online_users.map((user) => {
+				const id = user.conversation.id
+				if (!unq_set.has(id)) {
+					unq_arr.push(user)
+					unq_set.add(id)
+				}
+			})
+			return <>
+				{
+					unq_arr.filter(({ conversation }) => conversation.id.toLowerCase().indexOf(search.toLowerCase()) > -1).sort().map(({ conversation }) => <ChatPreview user_id={conversation.id} user_name={conversation.id} />)
+				}
+			</>
+		}	
+		else
+			return <p class="text-center mt-5 pt-5">Create New Chat</p>
+	}
+
+	return <div id="app">
 		<div class="container mt-4 shadow-lg bg-white">
 			<div class="row h-100">
 				<div class="col-sm-3 d-none d-sm-block px-0 border-right">
-					<div class="bg-light pt-2 pb-2">
-						<h3 class="pl-3 pt-1 pb-2 mb-0 d-inline-block">Messenger</h3> <span class="pr-2 pt-2 font-weight-bold" style={{ float: 'right' }}><img src={signout_img}  onClick={()=>signOut()} style={{ maxWidth: "1.5em", marginTop: ".25em" }} /></span>
+					<div class="bg-light container-fluid">
+						<div class="row py-2">
+							<div class="col-2">{username && <img style={{ maxHeight: "3.3em" }} class=" border-dark border rounded-circle bg-white" src={"https://robohash.org/" + username + "?set=set2"} />}</div>
+							<div class="col-8">
+								<h3 class="pl-2 pt-1 pb-2 mb-0 d-inline-block">Messenger</h3>
+							</div>
+							<div class="col-2">
+								<img src={signout_img} onClick={() => signOut()} style={{ maxWidth: "1.75em", marginTop: ".75em" }} />
+							</div>
+						</div>
 					</div>
 					<div class="input-group input-group-sm">
-						<input type="text" class="form-control rounded-0 border-left-0" value={search} onInput={(e) => setSearchTerm(e.target.value)} placeholder="Search" />
+						<input type="text" class="form-control rounded-0 border-left-0"
+							value={search}
+							placeholder="Search"
+							onInput={e => setSearchTerm(e.target.value)}
+						/>
 						<div class="input-group-append">
 							<div class="btn btn-secondary-outline border rounded-0 border-right-0" type="submit">⌕</div>
 						</div>
 					</div>
 					<div className="pt-1" style={{ overflowY: "scroll", height: "70vh" }}>
 						{
-							online_users.filter(({ name }) => name.toLowerCase().indexOf(search.toLowerCase()) > -1).map(user => <ChatPreview user_id={user.id} user_name={user.name} />)
+							<ChatPreviewGen />
 						}
 					</div>
 					<div class="bg-light border-top py-2" style={{ left: 0, bottom: 0 }}>
 						<div class="input-group px-3">
-							<input type="text" class="form-control" placeholder="Chatroom Name" aria-label="Recipient's username" aria-describedby="basic-addon2" />
+							<input type="text" class="form-control" placeholder="Chatroom ID"
+								value={roomId}
+								onInput={e => setRoomId(e.target.value)}
+							/>
 							<div class="input-group-append">
-								<button class="btn btn-outline-primary rounded-right" type="button">Join</button>
+								<button class="btn btn-outline-primary rounded-right" type="button" onClick={() => joinRoom()}>Join</button>
 							</div>
 						</div>
 					</div>
@@ -143,7 +276,7 @@ const App = () => {
 				<div class="col-sm-9 px-0 ">
 					{
 						showLoading ? <LoadingScreen /> : <Router>
-							<Chat path="/chat/:chatid" setLoading={setShowLoading} />
+							<Chat path="/chat/:chatid" setLoading={setShowLoading} userid={username} />
 							<Home path="/" setLoading={setShowLoading} />
 						</Router>
 					}
@@ -151,11 +284,6 @@ const App = () => {
 			</div>
 		</div>
 	</div>
-
-	return <AuthorizedScreens />
-
-
-
 }
 
 export default App;
