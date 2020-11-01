@@ -134,6 +134,7 @@ export const syncMessages = /* GraphQL */ `
       items {
         id
         authorId
+        img
         content
         messageConversationId
         createdAt

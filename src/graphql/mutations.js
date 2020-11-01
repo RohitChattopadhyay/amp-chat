@@ -97,6 +97,30 @@ export const createConvo = /* GraphQL */ `
     }
   }
 `;
+export const addUser = /* GraphQL */ `
+  mutation AddUser(
+    $input: UpdateConversationInput!
+    $condition: ModelConversationConditionInput
+  ) {
+    addUser(input: $input, condition: $condition) {
+      id
+      messages {
+        nextToken
+        startedAt
+      }
+      associated {
+        nextToken
+        startedAt
+      }
+      members
+      createdAt
+      updatedAt
+      _version
+      _deleted
+      _lastChangedAt
+    }
+  }
+`;
 export const createMessage = /* GraphQL */ `
   mutation CreateMessage(
     $input: CreateMessageInput!
@@ -114,6 +138,7 @@ export const createMessage = /* GraphQL */ `
         _lastChangedAt
       }
       authorId
+      img
       content
       conversation {
         id
@@ -150,6 +175,7 @@ export const updateMessage = /* GraphQL */ `
         _lastChangedAt
       }
       authorId
+      img
       content
       conversation {
         id
@@ -186,6 +212,7 @@ export const deleteMessage = /* GraphQL */ `
         _lastChangedAt
       }
       authorId
+      img
       content
       conversation {
         id

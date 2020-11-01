@@ -47,6 +47,7 @@ export const onCreateMessage = /* GraphQL */ `
         _lastChangedAt
       }
       authorId
+      img
       content
       conversation {
         id
@@ -58,69 +59,6 @@ export const onCreateMessage = /* GraphQL */ `
         _lastChangedAt
       }
       messageConversationId
-      createdAt
-      updatedAt
-      _version
-      _deleted
-      _lastChangedAt
-    }
-  }
-`;
-export const onCreateUser = /* GraphQL */ `
-  subscription OnCreateUser {
-    onCreateUser {
-      id
-      username
-      conversations {
-        nextToken
-        startedAt
-      }
-      messages {
-        nextToken
-        startedAt
-      }
-      createdAt
-      updatedAt
-      _version
-      _deleted
-      _lastChangedAt
-    }
-  }
-`;
-export const onUpdateUser = /* GraphQL */ `
-  subscription OnUpdateUser {
-    onUpdateUser {
-      id
-      username
-      conversations {
-        nextToken
-        startedAt
-      }
-      messages {
-        nextToken
-        startedAt
-      }
-      createdAt
-      updatedAt
-      _version
-      _deleted
-      _lastChangedAt
-    }
-  }
-`;
-export const onDeleteUser = /* GraphQL */ `
-  subscription OnDeleteUser {
-    onDeleteUser {
-      id
-      username
-      conversations {
-        nextToken
-        startedAt
-      }
-      messages {
-        nextToken
-        startedAt
-      }
       createdAt
       updatedAt
       _version
