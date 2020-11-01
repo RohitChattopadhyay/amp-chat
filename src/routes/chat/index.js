@@ -13,6 +13,7 @@ const GetConvo = /* GraphQL */`query GetConversation($chatid: ID!) {
 	  messages(sortDirection: ASC) {
 		items {
 			id
+			img
 		  	authorId
 		  	content
 		  	createdAt
@@ -33,6 +34,7 @@ const sub_onCreateMessage = /* GraphQL */`subscription OnCreateMsg($chatid: ID!)
 		messages(sortDirection: ASC) {
 		  items {
 			content
+			img
 			createdAt
 			authorId
 			id
@@ -114,7 +116,7 @@ const Chat = ({ chatid, userid }) => {
 		endDiv.current.scrollIntoView({ behavior: 'smooth' });
 	}, [messages]);
 
-	const sendMessage = async (image=null) => {
+	const sendMessage = async (image = null) => {
 		const msg = await API.graphql(graphqlOperation(CreateMessage, { content: message, chatid, username, image }))
 		const { error } = msg
 		console.log(msg)
@@ -122,13 +124,20 @@ const Chat = ({ chatid, userid }) => {
 			setMessage("")
 	}
 
-	const handleFileUpload = (e) => {
+	const handleFileUpload = async (e) => {
 		const files = Array.from(e.target.files)
-		files.map(file => {
+		files.map(async file => {
 			const reader = new FileReader();
 			reader.readAsDataURL(file);
-			reader.onload = () => {
-				sendMessage(reader.result)
+			reader.onload = async () => {
+				const form = new FormData();
+				form.append("image", file)
+				const response = await fetch("https://api.imgbb.com/1/upload?key=afd831b4ec678fb8f26d58885cd09312", {
+					body: form	,
+					method: "POST"
+				})
+				const data = await response.json()
+				sendMessage(data.data.display_url)
 			};
 			reader.onerror = error => alert(error);
 		})
@@ -147,7 +156,7 @@ const Chat = ({ chatid, userid }) => {
 			<div class="col-12 py-0">
 				<div class="row d-block px-3" style={{ overflowY: "scroll", height: "74.6vh", backgroundImage: 'url(' + chat_bg + ')' }}>
 					{
-						messages.map(({ content, authorId, createdAt, image }) => <Message img={image} text={content} name={authorId} time={createdAt} username={username} dir={authorId == username ? "right" : "left"} />)
+						messages.map(({ content, authorId, createdAt, img }) => <Message img={img} text={content} name={authorId} time={createdAt} username={username} dir={authorId == username ? "right" : "left"} />)
 					}
 					<div ref={endDiv} />
 				</div>
@@ -159,11 +168,11 @@ const Chat = ({ chatid, userid }) => {
 						onInput={e => setMessage(e.target.value)}
 					/>
 					<div class="input-group-append">
-						<input class="d-none" type="file" 
-						accept=".jpeg,.jpg,.png"
-						onChange={handleFileUpload}
-						ref={imgAttach}/>
-						<button class="btn btn-outline-secondary" onClick={()=>imgAttach.current.click()} type="button"><img style={{ maxWidth: "1.5em" }} src={image_icon} /></button>
+						<input class="d-none" type="file"
+							accept=".jpeg,.jpg,.png"
+							onChange={handleFileUpload}
+							ref={imgAttach} />
+						<button class="btn btn-outline-secondary" onClick={() => imgAttach.current.click()} type="button"><img style={{ maxWidth: "1.5em" }} src={image_icon} /></button>
 						<button class="btn btn-primary rounded-right" type="button" onClick={() => sendMessage()}>Send</button>
 					</div>
 				</div>
