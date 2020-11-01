@@ -1,32 +1,27 @@
 {
-    "auth": {
-        "ampchat75271bab": {
-            "service": "Cognito",
-            "providerPlugin": "awscloudformation",
-            "dependsOn": []
-        }
-    },
-    "api": {
-        "ampchat": {
-            "service": "AppSync",
-            "providerPlugin": "awscloudformation",
-            "output": {
-                "authConfig": {
-                    "defaultAuthentication": {
-                        "authenticationType": "AMAZON_COGNITO_USER_POOLS",
-                        "userPoolConfig": {
-                            "userPoolId": "authampchat75271bab"
-                        }
-                    },
-                    "additionalAuthenticationProviders": []
-                }
-            }
-        }
-    },
-    "hosting": {
-        "amplifyhosting": {
-            "service": "amplifyhosting",
-            "type": "cicd"
-        }
-    }
+	"auth": {
+		"ampchat75271bab": {
+			"service": "Cognito",
+			"providerPlugin": "awscloudformation",
+			"dependsOn": []
+		}
+	},
+	"api": {
+		"ampchat": {
+			"service": "AppSync",
+			"providerPlugin": "awscloudformation",
+			"output": {
+				"authConfig": {
+					"defaultAuthentication": {
+						"authenticationType": "AMAZON_COGNITO_USER_POOLS",
+						"userPoolConfig": {
+							"userPoolId": "authampchat75271bab"
+						}
+					},
+					"additionalAuthenticationProviders": []
+				}
+			}
+		}
+	},
+	"hosting": {}
 }
