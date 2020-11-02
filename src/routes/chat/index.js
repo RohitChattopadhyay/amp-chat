@@ -105,15 +105,22 @@ const Chat = ({ chatid, userid, setLoading }) => {
 		}
 		setMessages(getConvo.messages.items)
 		setMembers(getConvo.members ? getConvo.members : [])
+	}, [chatid, userid])
+
+	useEffect(async ()=> {
 		const sub = await API.graphql(graphqlOperation(sub_onCreateMessage, { chatid })).subscribe({
-			next: (eventData) => setMessages(eventData.value.data.onCreateMessage.conversation.messages.items),
+			next: (eventData) => {
+				console.log(eventData)
+				if(eventData.value.data.onCreateMessage)
+					setMessages(eventData.value.data.onCreateMessage.conversation.messages.items)
+			},
 			error: error => {
 				console.warn(error);
 			}
 		})
 
 		return () => sub.unsubscribe()
-	}, [chatid, userid])
+	},[chatid])
 
 	useEffect(() => {
 		endDiv.current.scrollIntoView({ behavior: 'smooth' });

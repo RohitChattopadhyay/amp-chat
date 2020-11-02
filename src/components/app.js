@@ -21,8 +21,8 @@ const createConvo = /* GraphQL */`mutation CreateConvo($id: ID!, $members: [Stri
 }
 `
 
-const sub_onCreateRoom = /* GraphQL */`subscription OnCreateRoom($username: ID!) {
-	onCreateConvoLink(convoLinkUserId: $username) {
+const sub_onCreateRoom = /* GraphQL */`subscription OnCreateRoom($userName: ID!) {
+	onCreateConvoLink(convoLinkUserId: $userName) {
 	  user {
 		conversations {
 		  items {
@@ -121,7 +121,7 @@ const App = () => {
 				 	setOnlineUsers(eventData.value.data.onCreateConvoLink.user.conversations.items)
 			},
 			error: error => {
-				console.warn(error);
+				console.warn(userName, error);
 			}
 		});
 		return () => subscription.unsubscribe()
