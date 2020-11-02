@@ -1,7 +1,7 @@
 import { h } from 'preact';
 import { useState, useRef, useEffect } from 'preact/hooks';
 import { route } from 'preact-router';
-import { API, graphqlOperation, Auth } from 'aws-amplify'
+import { API, graphqlOperation } from 'aws-amplify'
 import stc from 'string-to-color'
 import image_icon from "../../assets/img_icon.png"
 import chat_bg from "../../assets/chat_bg.jpg"
@@ -81,7 +81,7 @@ const Modal = ({ src, toggle }) => (
 	</dialog>
 )
 
-const Chat = ({ chatid, userid }) => {
+const Chat = ({ chatid, userid, setLoading }) => {
 	const [username, setUsername] = useState(userid)
 	const endDiv = useRef(null);
 	const [message, setMessage] = useState("")
@@ -89,28 +89,25 @@ const Chat = ({ chatid, userid }) => {
 	const [members, setMembers] = useState([])
 	const imgAttach = useRef(null)
 
-	useEffect(() => {
-		const subscription = async () => {
-			const chat_details = await API.graphql(graphqlOperation(GetConvo, { chatid }))
-			const { errors, getConvo } = chat_details.data
-			if (errors) {
-				alert("Unauthorized")
-				route("/")
-				return
-			}
-			setMessages(getConvo.messages.items)
-			setMembers(getConvo.members ? getConvo.members : [])
-			return API.graphql(graphqlOperation(sub_onCreateMessage, { chatid })).subscribe({
-				next: (eventData) => {
-					setMessages(eventData.value.data.onCreateMessage.conversation.messages.items)
-				}
-			})
+	useEffect(async () => {
+		const chat_details = await API.graphql(graphqlOperation(GetConvo, { chatid }))
+		const { errors, getConvo } = chat_details.data
+		if (errors || !getConvo) {
+			alert("Unauthorized")
+			route("/")
+			return
 		}
+		setMessages(getConvo.messages.items)
+		setMembers(getConvo.members ? getConvo.members : [])
+		const sub = await API.graphql(graphqlOperation(sub_onCreateMessage, { chatid })).subscribe({
+			next: (eventData) => setMessages(eventData.value.data.onCreateMessage.conversation.messages.items),
+			error: error => {
+				console.warn(error);
+			}
+		})
 
-
-		const sub = subscription()
 		return () => sub.unsubscribe()
-	}, [username, userid])
+	}, [chatid, userid])
 
 	useEffect(() => {
 		endDiv.current.scrollIntoView({ behavior: 'smooth' });
@@ -133,7 +130,7 @@ const Chat = ({ chatid, userid }) => {
 				const form = new FormData();
 				form.append("image", file)
 				const response = await fetch("https://api.imgbb.com/1/upload?key=afd831b4ec678fb8f26d58885cd09312", {
-					body: form	,
+					body: form,
 					method: "POST"
 				})
 				const data = await response.json()

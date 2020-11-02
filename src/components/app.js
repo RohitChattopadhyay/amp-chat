@@ -105,10 +105,13 @@ const App = () => {
 				checkIfUserExists(username)
 			}
 
-			return API.graphql(
+			return await API.graphql(
 				graphqlOperation(sub_onCreateRoom, { username })
 			).subscribe({
-				next: (eventData) => setOnlineUsers(eventData.value.data.onCreateConvoLink.user.conversations.items)
+				next: (eventData) => setOnlineUsers(eventData.value.data.onCreateConvoLink.user.conversations.items),
+				error: error => {
+					console.warn(error);
+				}
 			});
 		}
 		const subscription = onBoarding()
@@ -277,7 +280,7 @@ const App = () => {
 					{
 						showLoading ? <LoadingScreen /> : <Router>
 							<Chat path="/chat/:chatid" setLoading={setShowLoading} userid={username} />
-							<Home path="/" setLoading={setShowLoading} />
+							<Home default setLoading={setShowLoading}/>
 						</Router>
 					}
 				</div>
