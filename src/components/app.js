@@ -1,5 +1,6 @@
 import { h } from 'preact';
 import { Router, route } from 'preact-router';
+import slugify from 'slugify';
 
 import { API, graphqlOperation, Auth } from 'aws-amplify'
 import { useState, useEffect } from 'preact/hooks';
@@ -90,7 +91,7 @@ const App = () => {
 
 	const [search, setSearchTerm] = useState("")
 	const [roomId, setRoomId] = useState("")
-
+	
 	useEffect(() => {
 		const onBoarding = async () => {
 			let username;
@@ -104,19 +105,27 @@ const App = () => {
 			if (username !== '') {
 				checkIfUserExists(username)
 			}
-
-			return await API.graphql(
-				graphqlOperation(sub_onCreateRoom, { username })
-			).subscribe({
-				next: (eventData) => setOnlineUsers(eventData.value.data.onCreateConvoLink.user.conversations.items),
-				error: error => {
-					console.warn(error);
-				}
-			});
 		}
-		const subscription = onBoarding()
-		return () => subscription.unsubscribe()
+		onBoarding()
 	}, []);
+
+	useEffect(async () => {
+		const user = await Auth.currentAuthenticatedUser()
+		const userName = user.username
+		const subscription = API.graphql(
+			graphqlOperation(sub_onCreateRoom, { userName })
+		).subscribe({
+			next: (eventData) => {
+				console.log(eventData)
+				if(eventData.value.data.onCreateConvoLink)
+				 	setOnlineUsers(eventData.value.data.onCreateConvoLink.user.conversations.items)
+			},
+			error: error => {
+				console.warn(error);
+			}
+		});
+		return () => subscription.unsubscribe()
+	}, [username])
 
 	const checkIfUserExists = async (id) => {
 		try {
@@ -168,7 +177,7 @@ const App = () => {
 
 	const createRoom = async (room, users = []) => {
 		try {
-			const members = [...new Set([username, ...users])].sort()
+			const members = Array.from(new Set([username, ...users])).sort()
 			if (members.length < 2)
 				return
 			const convo = { id: room, members }
@@ -177,6 +186,7 @@ const App = () => {
 				let relation = { user: member.trim(), room }
 				await API.graphql(graphqlOperation(createConvoLink, relation))
 			})
+			setRoomId("")
 		} catch (err) {
 			console.log('error creating conversation...', err)
 		}
@@ -229,7 +239,7 @@ const App = () => {
 					unq_arr.filter(({ conversation }) => conversation.id.toLowerCase().indexOf(search.toLowerCase()) > -1).sort().map(({ conversation }) => <ChatPreview user_id={conversation.id} user_name={conversation.id} />)
 				}
 			</>
-		}	
+		}
 		else
 			return <p class="text-center mt-5 pt-5">Create New Chat</p>
 	}
@@ -268,7 +278,7 @@ const App = () => {
 						<div class="input-group px-3">
 							<input type="text" class="form-control" placeholder="Chatroom ID"
 								value={roomId}
-								onInput={e => setRoomId(e.target.value)}
+								onInput={e => setRoomId(slugify(e.target.value))}
 							/>
 							<div class="input-group-append">
 								<button class="btn btn-outline-primary rounded-right" type="button" onClick={() => joinRoom()}>Join</button>
@@ -280,7 +290,7 @@ const App = () => {
 					{
 						showLoading ? <LoadingScreen /> : <Router>
 							<Chat path="/chat/:chatid" setLoading={setShowLoading} userid={username} />
-							<Home default setLoading={setShowLoading}/>
+							<Home default setLoading={setShowLoading} />
 						</Router>
 					}
 				</div>

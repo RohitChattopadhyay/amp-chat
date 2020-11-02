@@ -55,12 +55,17 @@ const Message = ({ text = null, img = null, time, dir = "left", name = null, use
 		<div class={`col-12 my-2 text-${dir}${dir == "left" ? " text-white" : ""}`}>
 			{name != username && <p class="text-left mb-0" style={{ color: stc(name) }}><small><em><strong>{name}</strong></em></small></p>}
 			{
-				img ? <div><div class={`d-block w-25 float-${dir} shadow border border-black rounded  bg-${dir == "left" ? "dark" : "light"}`}>
+				img ? <div><div class={`d-block w-25 float-${dir} shadow border border-black rounded bg-${dir == "left" ? "dark" : "light"}`}>
 					<img src={img} class="w-100 rounded border" onClick={toggleModal} />
+
+{
+	text && <p class="my-0 py-1 px-2" style={{ wordBreak: "break-all" }}>{text}</p>
+}
+
 					<div class="clearfix" />
 				</div>
 					<div class="clearfix" />
-					{showModal ? <Modal src={img} toggle={toggleModal} /> : null}
+					{showModal ? <Modal src={img} txt={text} toggle={toggleModal} /> : null}
 				</div> : <div class={`d-inline-block py-1 px-2 rounded border-black border shadow bg-${dir == "left" ? "dark" : "light"}`}>
 
 						{
@@ -73,10 +78,11 @@ const Message = ({ text = null, img = null, time, dir = "left", name = null, use
 	)
 }
 
-const Modal = ({ src, toggle }) => (
+const Modal = ({ src, toggle, txt }) => (
 	<dialog open class={"modal in h-100 w-100 visible"} onClick={toggle}>
 		<center>
-			<img style={{ maxWidth: "12wh", maxHeight: "95vh" }} src={src} />
+			<img style={{ maxWidth: "12wh", maxHeight: "90vh" }} src={src} />
+			{txt && <p class="lead text-white mt-2">{txt}</p>}
 		</center>
 	</dialog>
 )

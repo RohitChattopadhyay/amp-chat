@@ -33,6 +33,7 @@
     "preact": "^10.3.2",
     "preact-render-to-string": "^5.1.4",
     "preact-router": "^3.2.1",
+    "slugify": "^1.4.6",
     "string-to-color": "^2.2.2"
   },
   "jest": {
