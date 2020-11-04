@@ -110,7 +110,7 @@ const Chat = ({ chatid, userid, setLoading }) => {
 	useEffect(() => {
 		if(chatid)
 			subscribe_create_msg(chatid)
-	}, [chatid])
+	}, [])
 
 	const subscribe_create_msg = async (chat_id) => {
 		await API.graphql(graphqlOperation(sub_onCreateMessage, { chat_id })).subscribe({

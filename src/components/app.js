@@ -115,7 +115,7 @@ const App = () => {
 	useEffect(() => {
 		if(username)
 			subscription(username)
-	}, [username])
+	}, [])
 
 	const subscription = async (userName) => {
 		await API.graphql(
