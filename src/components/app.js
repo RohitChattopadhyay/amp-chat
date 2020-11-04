@@ -54,6 +54,9 @@ const CreateUser = /* GraphQL */ `mutation CreateUser($username: String!, $id: I
 		}
 	  }
 	}
+	createConvoLink(input: {convoLinkConversationId: "Broadcast", convoLinkUserId: $id}) {
+	  id
+	}
   }
 `
 
@@ -91,7 +94,7 @@ const App = () => {
 
 	const [search, setSearchTerm] = useState("")
 	const [roomId, setRoomId] = useState("")
-	
+
 	useEffect(() => {
 		const onBoarding = async () => {
 			let username;
@@ -109,28 +112,30 @@ const App = () => {
 		onBoarding()
 	}, []);
 
-	useEffect(async () => {
-		const user = await Auth.currentAuthenticatedUser()
-		const userName = user.username
-		const subscription = API.graphql(
+	useEffect(() => {
+		if(username)
+			subscription(username)
+	}, [username])
+
+	const subscription = async (userName) => {
+		await API.graphql(
 			graphqlOperation(sub_onCreateRoom, { userName })
 		).subscribe({
 			next: (eventData) => {
 				console.log(eventData)
-				if(eventData.value.data.onCreateConvoLink)
-				 	setOnlineUsers(eventData.value.data.onCreateConvoLink.user.conversations.items)
+				if (eventData.value.data.onCreateConvoLink)
+					setOnlineUsers(eventData.value.data.onCreateConvoLink.user.conversations.items)
 			},
 			error: error => {
 				console.warn(userName, error);
 			}
-		});
-		return () => subscription.unsubscribe()
-	}, [username])
+		})
+	}
 
 	const checkIfUserExists = async (id) => {
 		try {
 			const user = await API.graphql(graphqlOperation(GetUser, { id: id }))
-			const { getUser } = user.data
+			const { getUser } = user.data 
 			if (!getUser) {
 				await createUser(id)
 			} else {

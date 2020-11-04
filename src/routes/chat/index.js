@@ -28,8 +28,8 @@ const CreateMessage = /* GraphQL */`mutation CreateMsg($content:String!, $chatid
 	}
   }
 `
-const sub_onCreateMessage = /* GraphQL */`subscription OnCreateMsg($chatid: ID!) {
-	onCreateMessage(messageConversationId: $chatid) {
+const sub_onCreateMessage = /* GraphQL */`subscription OnCreateMsg($chat_id: ID!) {
+	onCreateMessage(messageConversationId: $chat_id) {
 	  conversation {
 		messages(sortDirection: ASC) {
 		  items {
@@ -58,9 +58,9 @@ const Message = ({ text = null, img = null, time, dir = "left", name = null, use
 				img ? <div><div class={`d-block w-25 float-${dir} shadow border border-black rounded bg-${dir == "left" ? "dark" : "light"}`}>
 					<img src={img} class="w-100 rounded border" onClick={toggleModal} />
 
-{
-	text && <p class="my-0 py-1 px-2" style={{ wordBreak: "break-all" }}>{text}</p>
-}
+					{
+						text && <p class="my-0 py-1 px-2" style={{ wordBreak: "break-all" }}>{text}</p>
+					}
 
 					<div class="clearfix" />
 				</div>
@@ -107,20 +107,23 @@ const Chat = ({ chatid, userid, setLoading }) => {
 		setMembers(getConvo.members ? getConvo.members : [])
 	}, [chatid, userid])
 
-	useEffect(async ()=> {
-		const sub = await API.graphql(graphqlOperation(sub_onCreateMessage, { chatid })).subscribe({
+	useEffect(() => {
+		if(chatid)
+			subscribe_create_msg(chatid)
+	}, [chatid])
+
+	const subscribe_create_msg = async (chat_id) => {
+		await API.graphql(graphqlOperation(sub_onCreateMessage, { chat_id })).subscribe({
 			next: (eventData) => {
 				console.log(eventData)
-				if(eventData.value.data.onCreateMessage)
+				if (eventData.value.data.onCreateMessage)
 					setMessages(eventData.value.data.onCreateMessage.conversation.messages.items)
 			},
 			error: error => {
 				console.warn(error);
 			}
 		})
-
-		return () => sub.unsubscribe()
-	},[chatid])
+	}
 
 	useEffect(() => {
 		endDiv.current.scrollIntoView({ behavior: 'smooth' });

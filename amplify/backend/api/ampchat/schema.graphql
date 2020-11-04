@@ -20,7 +20,9 @@ type Conversation
     queries: { get: "getConvo" }
     subscriptions: null
   )
-  @auth(rules: [{ allow: owner, ownerField: "members" }]) {
+  @auth(rules: [
+    { allow: private, operations: [create, read, update]}
+    ]) {
   id: ID!
   messages: [Message] @connection(name: "ConvoMsgs", sortField: "createdAt")
   associated: [ConvoLink] @connection(name: "AssociatedLinks")
